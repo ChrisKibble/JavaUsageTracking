@@ -49,7 +49,7 @@ function Create-CMJavaUsageTracking {
   Create Java usagetracking WMI Class
   #>
   process {
-    TRY {
+    try {
       $newClass = New-Object System.Management.ManagementClass("root\cimv2", [String]::Empty, $null); 
 
       $newClass["__CLASS"] = "CM_JavaUsageTracking"; 
@@ -131,14 +131,14 @@ ForEach ($JRE in $JREs) {
         if (-Not $UTProps) {
             IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Creating $($JRE.JavaHome)\lib\management\usagetracker.properties" -Severity 1}
             Create-UsageTrackingProps -UTPath "$($JRE.JavaHome)\lib\management\usagetracker.properties"
-        } Else {
+        } else {
             IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "$($JRE.JavaHome)\lib\management\usagetracker.properties exists" -Severity 1}
         }
     }
 }
 
 #Enumerate user profile folders from WMI
-Try {
+try {
     IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Gather user profile paths." -Severity 1}
     $users = gwmi win32_userprofile | select LocalPath
     } Catch {
@@ -191,7 +191,7 @@ If (($WMICheck -ne $null) -eq $false) {
             Log-ScriptEvent -Value "Verified CM_JavaUsageTracking class exists." -Severity 1
         }
     }
-} ELSE {
+} else {
     IF ($LoggingEnable -eq $true) {
         Log-ScriptEvent -Value "Verified CM_JavaUsageTracking class exists." -Severity 1
     }
@@ -223,7 +223,7 @@ ForEach ($Record in $DataSet) {
             }
             Exit 5150
         }
-        } Else {
+        } else {
         IF ($LoggingEnable -eq $true) {
             Log-ScriptEvent -Value "Record already inserted" -Severity 1
         }

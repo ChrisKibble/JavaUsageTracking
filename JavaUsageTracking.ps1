@@ -28,13 +28,13 @@ Function Log-ScriptEvent {
     
     
     #Create the line to be logged 
-    $LogLine =  "<![LOG[$Value]LOG]!>" +` 
-                "<time=`"$(Get-Date -Format HH:mm:ss.fff)$($UtcOffset)`" " +` 
-                "date=`"$(Get-Date -Format M-d-yyyy)`" " +` 
-                "component=`"Java Compliance`" " +`  
-                "context=`"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)`" " +` 
-                "type=`"$Severity`" " +` 
-                "thread=`"$([Threading.Thread]::CurrentThread.ManagedThreadId)`" " +` 
+    $LogLine =  "<![LOG[$Value]LOG]!>" +`
+                "<time=`"$(Get-Date -Format HH:mm:ss.fff)$($UtcOffset)`" " +`
+                "date=`"$(Get-Date -Format M-d-yyyy)`" " +`
+                "component=`"Java Compliance`" " +`
+                "context=`"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)`" " +`
+                "type=`"$Severity`" " +`
+                "thread=`"$([Threading.Thread]::CurrentThread.ManagedThreadId)`" " +`
                 "file=`"`">" 
     
     #Write the line to the passed log file 
@@ -118,7 +118,6 @@ IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Starting Java logging dis
 #Set Variables
 $header = "Type","DateTime","HostIP","Command","JREPath","JavaVer","JREVer","JavaVen","JVMVen","OS","Arch","OSVer","JVMArg","ClassPath"
 $DataSet = @()
-$JREPaths = @("C:\Program Files (x86)\Java\jre7")
 
 #Enable Java logging by enumerating the JREs from the registry
 $Keys = Get-ChildItem "HKLM:\Software\WOW6432Node\JavaSoft\Java Runtime Environment"
@@ -140,7 +139,7 @@ ForEach ($JRE in $JREs) {
 #Enumerate user profile folders from WMI
 try {
     IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Gather user profile paths." -Severity 1}
-    $users = gwmi win32_userprofile | select LocalPath
+    $users = Get-WMIObject win32_userprofile | Select-Object LocalPath
     } Catch {
     IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Error gather user profile paths." -Severity 3}
     Exit 5150
@@ -156,7 +155,7 @@ Foreach ($user in $users) {
         IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Found $($user.LocalPath)\$($UTLogFileName), attempting to load data." -Severity 1}
             Try {
                 $Data = import-csv "$($user.LocalPath)\$($UTLogFileName)" -Delimiter '^' -Header $header
-                $Dataset += $Data | Select @{Name="User";Expression={($($user.LocalPath) -split '\\')[-1].ToString()}},Type,DateTime,HostIP,@{Name="Command";Expression={if($_.Command -like 'http*'){($_.Command -split ': ')[0].ToString() } else {($_.Command -split ':')[0]}}},JREPath,JavaVer,JREVer,JavaVen,JVMVen
+                $Dataset += $Data | Select-Object @{Name="User";Expression={($($user.LocalPath) -split '\\')[-1].ToString()}},Type,DateTime,HostIP,@{Name="Command";Expression={if($_.Command -like 'http*'){($_.Command -split ': ')[0].ToString() } else {($_.Command -split ':')[0]}}},JREPath,JavaVer,JREVer,JavaVen,JVMVen
                 IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Parsing $($user.LocalPath)\$($UTLogFileName)" -Severity 1}
             } Catch {
                 Write-Host "Wowzzers" #Wicked error here
@@ -174,14 +173,14 @@ IF ($LoggingEnable -eq $true) {
 }
 
 $WMICheck = Get-WmiObject -Class 'CM_JavaUsageTracking' -List -Namespace 'root\cimv2'
-If (($WMICheck -ne $null) -eq $false) {
+If (($null -ne $WMICheck) -eq $false) {
     IF ($LoggingEnable -eq $true) {
         Log-ScriptEvent -Value "CM_JavaUsageTracking class not found, creating class." -Severity 1
     }
     Create-CMJavaUsageTracking
     #Validate created class
     $WMIVerify = Get-WmiObject -Class "CM_JavaUsageTracking" -List -Namespace 'root\cimv2'
-    If (($WMIVerify -ne $null) -eq $false) {
+    If (($null -ne $WMIVerify) -eq $false) {
         IF ($LoggingEnable -eq $true) {
             Log-ScriptEvent -Value "Error creating class." -Severity 3
         }
@@ -200,7 +199,7 @@ If (($WMICheck -ne $null) -eq $false) {
 #Check if logged instances are in WMI
 ForEach ($Record in $DataSet) {
     $Instance = Get-WmiObject -Query "select Type from CM_JavaUsageTracking where DateTime='$($Record.DateTime)'"
-    if (($instance -ne $null) -eq $false) {
+    if (($null -ne $instance) -eq $false) {
         #Add record when not found
         IF ($LoggingEnable -eq $true) {
             Log-ScriptEvent -Value "Adding record to WMI datastore..." -Severity 1

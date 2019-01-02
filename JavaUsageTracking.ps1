@@ -121,9 +121,12 @@ $DataSet = @()
 
 #Enable Java logging by enumerating the JREs from the registry
 $Keys = Get-ChildItem "HKLM:\Software\WOW6432Node\JavaSoft\Java Runtime Environment"
+$Keys += Get-ChildItem "HKLM:\Software\JavaSoft\Java Runtime Environment"
 $JREs = $Keys | Foreach-Object {Get-ItemProperty $_.PsPath }
 ForEach ($JRE in $JREs) {
-    IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Interogating JRE path $($JRE.JavaHome)" -Severity 1}
+    IF ($LoggingEnable -eq $true) {
+        Log-ScriptEvent -Value "Interogating JRE path $($JRE.JavaHome)" -Severity 1
+    }
     $JREPath = test-path "$($JRE.JavaHome)\lib\management"
     if ($JREPath) {
         $UTProps = test-path "$($JRE.JavaHome)\lib\management\usagetracker.properties"
@@ -139,9 +142,11 @@ ForEach ($JRE in $JREs) {
 #Enumerate user profile folders from WMI
 try {
     IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Gather user profile paths." -Severity 1}
-    $users = Get-WMIObject win32_userprofile | Select-Object LocalPath
-    } Catch {
-    IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Error gather user profile paths." -Severity 3}
+        $users = Get-WMIObject win32_userprofile | Select-Object LocalPath
+} Catch {
+    IF ($LoggingEnable -eq $true) {
+        Log-ScriptEvent -Value "Error gather user profile paths." -Severity 3
+    }
     Exit 5150
 }
 

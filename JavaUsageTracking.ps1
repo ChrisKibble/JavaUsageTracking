@@ -5,40 +5,40 @@ $UTLogFileName = ".java_usage_cm"
 ########################################################################################################## 
  
 Function Log-ScriptEvent { 
-#Thank you Ian Farr https://gallery.technet.microsoft.com/scriptcenter/Log-ScriptEvent-Function-ea238b85 
-#Define and validate parameters 
-[CmdletBinding()] 
-Param( 
-      #The information to log 
-      [parameter(Mandatory=$True)] 
-      [String]$Value, 
- 
-      #The severity (1 - Information, 2- Warning, 3 - Error) 
-      [parameter(Mandatory=$True)] 
-      [ValidateRange(1,3)] 
-      [Single]$Severity 
-      ) 
- 
- 
-#Obtain UTC offset 
-$DateTime = New-Object -ComObject WbemScripting.SWbemDateTime  
-$DateTime.SetVarDate($(Get-Date)) 
-$UtcValue = $DateTime.Value 
-$UtcOffset = $UtcValue.Substring(21, $UtcValue.Length - 21) 
- 
- 
-#Create the line to be logged 
-$LogLine =  "<![LOG[$Value]LOG]!>" +` 
-            "<time=`"$(Get-Date -Format HH:mm:ss.fff)$($UtcOffset)`" " +` 
-            "date=`"$(Get-Date -Format M-d-yyyy)`" " +` 
-            "component=`"Java Compliance`" " +`  
-            "context=`"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)`" " +` 
-            "type=`"$Severity`" " +` 
-            "thread=`"$([Threading.Thread]::CurrentThread.ManagedThreadId)`" " +` 
-            "file=`"`">" 
- 
-#Write the line to the passed log file 
-Add-Content -Path $LogFile -Value $LogLine 
+    #Thank you Ian Farr https://gallery.technet.microsoft.com/scriptcenter/Log-ScriptEvent-Function-ea238b85 
+    #Define and validate parameters 
+    [CmdletBinding()] 
+    Param( 
+        #The information to log 
+        [parameter(Mandatory=$True)] 
+        [String]$Value, 
+    
+        #The severity (1 - Information, 2- Warning, 3 - Error) 
+        [parameter(Mandatory=$True)] 
+        [ValidateRange(1,3)] 
+        [Single]$Severity 
+        ) 
+    
+    
+    #Obtain UTC offset 
+    $DateTime = New-Object -ComObject WbemScripting.SWbemDateTime  
+    $DateTime.SetVarDate($(Get-Date)) 
+    $UtcValue = $DateTime.Value 
+    $UtcOffset = $UtcValue.Substring(21, $UtcValue.Length - 21) 
+    
+    
+    #Create the line to be logged 
+    $LogLine =  "<![LOG[$Value]LOG]!>" +` 
+                "<time=`"$(Get-Date -Format HH:mm:ss.fff)$($UtcOffset)`" " +` 
+                "date=`"$(Get-Date -Format M-d-yyyy)`" " +` 
+                "component=`"Java Compliance`" " +`  
+                "context=`"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)`" " +` 
+                "type=`"$Severity`" " +` 
+                "thread=`"$([Threading.Thread]::CurrentThread.ManagedThreadId)`" " +` 
+                "file=`"`">" 
+    
+    #Write the line to the passed log file 
+    Add-Content -Path $LogFile -Value $LogLine 
  
 } 
 
@@ -140,7 +140,7 @@ ForEach ($JRE in $JREs) {
 #Enumerate user profile folders from WMI
 Try {
     IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Gather user profile paths." -Severity 1}
-    $users= gwmi win32_userprofile | select LocalPath
+    $users = gwmi win32_userprofile | select LocalPath
     } Catch {
     IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Error gather user profile paths." -Severity 3}
     Exit 5150
@@ -169,46 +169,63 @@ Foreach ($user in $users) {
 IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Completed data discovery, writing data to WMI" -Severity 1}
 
 #Check for WMI Class
-IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Verifying WMI Class exists.." -Severity 1}
+IF ($LoggingEnable -eq $true) {
+    Log-ScriptEvent -Value "Verifying WMI Class exists.." -Severity 1
+}
+
 $WMICheck = Get-WmiObject -Class 'CM_JavaUsageTracking' -List -Namespace 'root\cimv2'
 If (($WMICheck -ne $null) -eq $false) {
- IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "CM_JavaUsageTracking class not found, creating class." -Severity 1}
- Create-CMJavaUsageTracking
- #Validate created class
- $WMIVerify = Get-WmiObject -Class "CM_JavaUsageTracking" -List -Namespace 'root\cimv2'
- If (($WMIVerify -ne $null) -eq $false) {
-  IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Error creating class." -Severity 3}
-  Exit 5150
- } else {
-  IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Verified CM_JavaUsageTracking class exists." -Severity 1}
- }
+    IF ($LoggingEnable -eq $true) {
+        Log-ScriptEvent -Value "CM_JavaUsageTracking class not found, creating class." -Severity 1
+    }
+    Create-CMJavaUsageTracking
+    #Validate created class
+    $WMIVerify = Get-WmiObject -Class "CM_JavaUsageTracking" -List -Namespace 'root\cimv2'
+    If (($WMIVerify -ne $null) -eq $false) {
+        IF ($LoggingEnable -eq $true) {
+            Log-ScriptEvent -Value "Error creating class." -Severity 3
+        }
+        Exit 5150
+    } else {
+        IF ($LoggingEnable -eq $true) {
+            Log-ScriptEvent -Value "Verified CM_JavaUsageTracking class exists." -Severity 1
+        }
+    }
 } ELSE {
- IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Verified CM_JavaUsageTracking class exists." -Severity 1}
+    IF ($LoggingEnable -eq $true) {
+        Log-ScriptEvent -Value "Verified CM_JavaUsageTracking class exists." -Severity 1
+    }
 }
 
 #Check if logged instances are in WMI
 ForEach ($Record in $DataSet) {
- $Instance = Get-WmiObject -Query "select Type from CM_JavaUsageTracking where DateTime='$($Record.DateTime)'"
-  if (($instance -ne $null) -eq $false) {
-    #Add record when not found
-    IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Adding record to WMI datastore..." -Severity 1}
-    $Arguments = @{User ="$($Record.User)";`
-                   Type = "$($Record.Type)";`
-                   DateTime = "$($Record.DateTime)";`
-                   HostIP = "$($Record.HostIP)";`
-                   Command = "$($Record.Command)";`
-                   JREPath = "$($Record.JREPath)";`
-                   JavaVer = "$($Record.JavaVer)";`
-                   JREVer = "$($Record.JREVer)";`
-                   JavaVen = "$($Record.JavaVen)";`
-                   JVMVen = "$($Record.JREVen)";}
-    Try {
-    Set-WmiInstance -Class CM_JavaUsageTracking -argument $Arguments
-    } Catch {
-    IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Error inserting record." -Severity 3}
-    Exit 5150
+    $Instance = Get-WmiObject -Query "select Type from CM_JavaUsageTracking where DateTime='$($Record.DateTime)'"
+    if (($instance -ne $null) -eq $false) {
+        #Add record when not found
+        IF ($LoggingEnable -eq $true) {
+            Log-ScriptEvent -Value "Adding record to WMI datastore..." -Severity 1
+        }
+        $Arguments = @{User ="$($Record.User)";`
+                    Type = "$($Record.Type)";`
+                    DateTime = "$($Record.DateTime)";`
+                    HostIP = "$($Record.HostIP)";`
+                    Command = "$($Record.Command)";`
+                    JREPath = "$($Record.JREPath)";`
+                    JavaVer = "$($Record.JavaVer)";`
+                    JREVer = "$($Record.JREVer)";`
+                    JavaVen = "$($Record.JavaVen)";`
+                    JVMVen = "$($Record.JREVen)";}
+        Try {
+            Set-WmiInstance -Class CM_JavaUsageTracking -argument $Arguments
+        } Catch {
+            IF ($LoggingEnable -eq $true) {
+                Log-ScriptEvent -Value "Error inserting record." -Severity 3
+            }
+            Exit 5150
+        }
+        } Else {
+        IF ($LoggingEnable -eq $true) {
+            Log-ScriptEvent -Value "Record already inserted" -Severity 1
+        }
     }
-  } Else {
-    IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Record already inserted" -Severity 1}
-  }
 }

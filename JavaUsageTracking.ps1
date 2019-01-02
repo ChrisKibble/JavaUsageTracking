@@ -222,7 +222,7 @@ ForEach ($Record in $DataSet) {
                     JavaVer = "$($Record.JavaVer)";`
                     JREVer = "$($Record.JREVer)";`
                     JavaVen = "$($Record.JavaVen)";`
-                    JVMVen = "$($Record.JREVen)";}
+                    JVMVen = "$($Record.JVMVen)";}
         Try {
             Set-WmiInstance -Class CM_JavaUsageTracking -argument $Arguments
         } Catch {

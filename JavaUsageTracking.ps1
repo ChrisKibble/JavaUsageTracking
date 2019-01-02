@@ -1,6 +1,7 @@
 $LogFile = (Get-ItemProperty -Path "HKLM:\Software\Microsoft\SMS\Client\Configuration\Client Properties" -Name "Local SMS Path").'Local SMS Path' + "Logs\CM_JavaUsageLogging.log"
 $LoggingEnable = $True
 $UTLogFileName = ".java_usage_cm"
+$OverwriteUT = $false
 
 ########################################################################################################## 
  
@@ -130,7 +131,7 @@ ForEach ($JRE in $JREs) {
     $JREPath = test-path "$($JRE.JavaHome)\lib\management"
     if ($JREPath) {
         $UTProps = test-path "$($JRE.JavaHome)\lib\management\usagetracker.properties"
-        if (-Not $UTProps) {
+        if (-Not $UTProps -or $OverwriteUT) {
             IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Creating $($JRE.JavaHome)\lib\management\usagetracker.properties" -Severity 1}
             Create-UsageTrackingProps -UTPath "$($JRE.JavaHome)\lib\management\usagetracker.properties"
         } else {

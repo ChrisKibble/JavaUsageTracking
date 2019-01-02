@@ -207,7 +207,7 @@ If (($null -ne $WMICheck) -eq $false) {
 
 #Check if logged instances are in WMI
 ForEach ($Record in $DataSet) {
-    $Instance = Get-WmiObject -Query "select Type from CM_JavaUsageTracking where DateTime='$($Record.DateTime)'"
+    $Instance = Get-WmiObject -Query "select Type from CM_JavaUsageTracking where DateTime='$($Record.DateTime)' and Command='$($Record.Command)'"
     if (($null -ne $instance) -eq $false) {
         #Add record when not found
         IF ($LoggingEnable -eq $true) {

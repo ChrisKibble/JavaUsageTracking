@@ -160,6 +160,10 @@ Foreach ($user in $users) {
         IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Found $($user.LocalPath)\$($UTLogFileName), attempting to load data." -Severity 1}
             Try {
                 $Data = import-csv "$($user.LocalPath)\$($UTLogFileName)" -Delimiter '^' -Header $header
+                $data | ForEach-Object {
+                    # Thanks https://stackoverflow.com/questions/17180955/trim-object-contents-in-csv-import
+                    $_.PSObject.Properties | Foreach-Object {$_.Value = $_.Value.Trim()}  
+                }
                 $Dataset += $Data | Select-Object @{Name="User";Expression={($($user.LocalPath) -split '\\')[-1].ToString()}},Type,DateTime,HostIP,@{Name="Command";Expression={if($_.Command -like 'http*'){($_.Command -split ': ')[0].ToString() } else {($_.Command -split ':')[0]}}},JREPath,JavaVer,JREVer,JavaVen,JVMVen
                 IF ($LoggingEnable -eq $true) {Log-ScriptEvent -Value "Parsing $($user.LocalPath)\$($UTLogFileName)" -Severity 1}
             } Catch {
